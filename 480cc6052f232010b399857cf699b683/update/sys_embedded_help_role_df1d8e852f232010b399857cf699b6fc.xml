@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_embedded_help_role">
+    <sys_embedded_help_role action="INSERT_OR_UPDATE">
+        <order>1000</order>
+        <role display_value="x_454651_pbmdaimle.integration_configuration_user" name="x_454651_pbmdaimle.integration_configuration_user">9f1d8e852f232010b399857cf699b6f8</role>
+        <sys_class_name>sys_embedded_help_role</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-14 15:50:59</sys_created_on>
+        <sys_id>df1d8e852f232010b399857cf699b6fc</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>9f1d8e852f232010b399857cf699b6f8</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_update_name>sys_embedded_help_role_df1d8e852f232010b399857cf699b6fc</sys_update_name>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-14 15:50:59</sys_updated_on>
+    </sys_embedded_help_role>
+</record_update>

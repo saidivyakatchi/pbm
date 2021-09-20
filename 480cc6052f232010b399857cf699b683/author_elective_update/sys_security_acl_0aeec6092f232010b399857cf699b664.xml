@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl">
+    <sys_security_acl action="DELETE">
+        <active>true</active>
+        <admin_overrides>true</admin_overrides>
+        <advanced>false</advanced>
+        <condition/>
+        <description>Default access control on x_454651_pbmdaimle_integration_field_mapping</description>
+        <name>x_454651_pbmdaimle_integration_field_mapping</name>
+        <operation display_value="write">write</operation>
+        <script/>
+        <sys_class_name>sys_security_acl</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-14 15:58:49</sys_created_on>
+        <sys_id>0aeec6092f232010b399857cf699b664</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_454651_pbmdaimle_integration_field_mapping</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_update_name>sys_security_acl_0aeec6092f232010b399857cf699b664</sys_update_name>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-14 15:58:49</sys_updated_on>
+        <type display_value="record">record</type>
+    </sys_security_acl>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="PBMdaimler">480cc6052f232010b399857cf699b683</application>
+        <file_path/>
+        <instance_id>7b54bdc46f1d06004c327b2f5d3ee48f</instance_id>
+        <instance_name>dev16266</instance_name>
+        <name>sys_security_acl_0aeec6092f232010b399857cf699b664</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl"><sys_security_acl action="INSERT_OR_UPDATE"><active>true</active><admin_overrides>true</admin_overrides><advanced>false</advanced><condition/><description>Default access control on x_454651_pbmdaimle_integration_field_mapping</description><name>x_454651_pbmdaimle_integration_field_mapping</name><operation display_value="write">write</operation><script/><sys_class_name>sys_security_acl</sys_class_name><sys_created_by>katchis</sys_created_by><sys_created_on>2021-04-14 15:58:49</sys_created_on><sys_id>0aeec6092f232010b399857cf699b664</sys_id><sys_mod_count>0</sys_mod_count><sys_name>x_454651_pbmdaimle_integration_field_mapping</sys_name><sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package><sys_policy/><sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope><sys_update_name>sys_security_acl_0aeec6092f232010b399857cf699b664</sys_update_name><sys_updated_by>katchis</sys_updated_by><sys_updated_on>2021-04-14 15:58:49</sys_updated_on><type display_value="record">record</type></sys_security_acl></record_update>]]></payload>
+        <payload_hash>938042060</payload_hash>
+        <record_name>x_454651_pbmdaimle_integration_field_mapping</record_name>
+        <reverted_from/>
+        <source>8c0c86852f232010b399857cf699b62d</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-14 15:58:49</sys_created_on>
+        <sys_id>ceeec6092f232010b399857cf699b666</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>178d11b49720000001</sys_recorded_at>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-14 15:58:49</sys_updated_on>
+        <type>Access Control</type>
+        <update_guid>0aeec6092a232010b4bb17d3179f7966</update_guid>
+        <update_guid_history>0aeec6092a232010b4bb17d3179f7966:938042060</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-14 16:01:16</sys_created_on>
+        <sys_db_object display_value="" name="sys_security_acl">sys_security_acl</sys_db_object>
+        <sys_id>03e04cd87636491a805aa9b0713150a4</sys_id>
+        <sys_metadata>0aeec6092f232010b399857cf699b664</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_454651_pbmdaimle_integration_field_mapping</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_parent display_value="">92eec6092f232010b399857cf699b670</sys_parent>
+        <sys_policy/>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_scope_delete display_value="">126a1af216344e9d88dbf14bddcb83b1</sys_scope_delete>
+        <sys_update_name>sys_security_acl_0aeec6092f232010b399857cf699b664</sys_update_name>
+        <sys_update_version display_value="sys_security_acl_0aeec6092f232010b399857cf699b664">ceeec6092f232010b399857cf699b666</sys_update_version>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-14 16:01:16</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

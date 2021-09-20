@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_454651_pbmdaimle.Incident_APIUtils</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>Incident_APIUtils</name>
+        <script><![CDATA[var Incident_APIUtils = Class.create();
+Incident_APIUtils.prototype = {
+    initialize: function() {
+
+    },
+
+    insertTargetRecord: function(obj, module) {
+        var correlation_id = obj.correlation_id;
+        var correlation_display = obj.correlation_display;
+        var state = obj.state;
+        var attachmentName;
+        var attachmentData;
+        var taskId;
+        try {
+            if ((state != "1") && (state != 2)) {
+                return "Transaction Ignored !Incident can only be created in new or inprogress state";
+
+            } else {
+                var inc = new GlideRecord(module);
+                inc.addQuery('correlation_display', correlation_display);
+                inc.addQuery('correlation_id', correlation_id);
+                inc.query();
+                if (inc.getRowCount() > 0) {
+                    return "Transaction Ignored ! Correlation ID already exist, please try with a new correlation ID";
+                } else {
+                    inc.initialize();
+                    for (var key in obj) {
+                        if (key != "attachment") {
+                            if (key == inc[key].getName()) {
+                                inc[key] = obj[key];
+                            }
+                        }
+                    }
+                    inc.insert();
+                    if (global.JSUtil.notNil(obj.attachment)) {
+                        taskId = inc.getValue('sys_id');
+                        obj.attachment.map(function(varObj) {
+                            attachmentName = varObj.name;
+                            attachmentData = varObj.content;
+                            var attachment = new GlideSysAttachment();
+
+                            attachment.writeBase64(inc, attachmentName, '', attachmentData);
+
+
+                        });
+                    }
+                }
+                return inc;
+            }
+        } catch (e) {
+            gs.error("insertIncRecord catch error" + e);
+
+        }
+    },
+
+    updateIncident: function(payload) {
+
+
+        if ((payload.state == "6") || (payload.state == "7")) {
+            return "Transaction Ignored ! Please use resolveIncident Method to resolve the incident";
+
+        } else {
+            var incident = new GlideRecord('problem');
+            incident.addQuery('correlation_id', "=", payload.correlation_id);
+            incident.addQuery('correlation_display', payload.correlation_display);
+            incident.setLimit(1);
+            incident.query();
+
+            if (incident.next()) {
+                if (global.JSUtil.nil(incident.assigned_to)) {
+                    return "Transaction Ignored ! Incident must be assigned in order to proceed further";
+                } else {
+                    if ((payload.state == '3') && (!payload.hold_reason)) {
+                        return "Transaction Ignored ! On hold reason is mandatory when putting incident state on hold";
+                    } else {
+                        for (var key in payload) {
+                            if (global.JSUtil.notNil(payload[key])) {
+                                if (key == incident[key].getName()) {
+                                    incident[key] = payload[key];
+                                }
+                            }
+                        }
+                        incident.update();
+                        return incident;
+                    }
+                }
+            } else {
+                return "Transaction Ignored ! Invalid Correlation ID, Incident update cannot be processed";
+            }
+        }
+    },
+
+
+    resolveIncident: function(payload) {
+        var state = payload.state;
+        var close_notes = payload.close_notes;
+        var close_code = payload.close_code;
+
+
+        if ((payload.correlation_id == "") || (payload.correlation_id == "undefined") || (payload.correlation_id == "null")) {
+            return "Correlation ID cannot be empty, Transaction cannot be processed";
+
+        } else {
+
+            var incResolve = new GlideRecord('incident');
+            incResolve.addQuery('correlation_id', "=", payload.correlation_id);
+            incResolve.setLimit(1);
+            incResolve.query();
+            if (incResolve.next()) {
+                if ((state == '6') && ((!close_code) || (!close_notes))) {
+                    return "Transaction Ignored ! Close code and close notes is mandatory when resolving an incident";
+                } else {
+                    incResolve.state = global.IncidentState.RESOLVED;
+                    incResolve.close_code = close_code;
+                    incResolve.close_notes = close_notes;
+                    incResolve.update();
+                    return incResolve;
+
+                }
+
+
+            } else {
+                return "Transaction Ignored ! Invalid Correlation ID, Incident update cannot be processed";
+            }
+        }
+    },
+
+    reopenIncident: function(payload) {
+        var reOpenInc = new GlideRecord('incident');
+        reOpenInc.addQuery('correlation_id', '=', payload.correlation_id);
+        reOpenInc.addQuery('correlation_display', payload.correlation_display);
+        reOpenInc.setLimit(1);
+        reOpenInc.query();
+        if (reOpenInc.next()) {
+            if (reOpenInc.state != 6) {
+                return "Transaction Ignored ! Incident must be in resolved state to be reopened";
+            } else if ((!payload.comments) || (payload.comments == "")) {
+                return "Transaction Ignored ! Comments are mandatory when reopening an incident";
+
+            } else {
+                reOpenInc.state = global.IncidentState.IN_PROGRESS;
+                reOpenInc.comments = payload.comments;
+                reOpenInc.update();
+                return reOpenInc;
+            }
+
+        } else {
+            return "Transaction Ignored !Invalid Correlation ID, Incident update cannot be processed";
+        }
+
+    },
+
+    insertIncidentTask: function(payload, company) {
+        var parent = payload.incident;
+        var attachmentName;
+        var attachmentData;
+        var parent_incident;
+
+        var isValidParent = this.checkIncidentExist(parent);
+        gs.info('Test123' + !isValidParent);
+        gs.info("company1" + (company != 'ace231e51bcba410c3bdb7a5464bcbad'));
+        if ((!isValidParent) && !(company != 'ace231e51bcba410c3bdb7a5464bcbad')) {
+            return "Transaction Ignored ! Invalid Parent Value ";
+        } else if ((payload.state != 1) && (payload.state != 2)) {
+            return "Transaction Ignored! Incident Task can only be created in open or wip state";
+
+        } else {
+            var incTask = new GlideRecord('incident_task');
+            incTask.addQuery('correlation_id', payload.correlation_id);
+            //incTask.addQuery('correlation_display', payload.correlation_display);
+            incTask.query();
+            if (incTask.getRowCount() > 0) {
+                return "Transaction Ignored !Correlation ID already exist, please try with a new correlation ID";
+            } else {
+                incTask.initialize();
+                if (payload.incident) {
+                    incTask.incident = payload.incident;
+                } else {
+                    incTask.incident = this.createIncidentForIncidentTask(payload);
+                }
+                incTask.short_description = payload.short_description;
+                incTask.description = payload.description;
+                incTask.priority = payload.priority;
+                incTask.state = payload.state;
+                incTask.assignment_group = payload.assignment_group;
+                incTask.correlation_id = payload.correlation_id;
+                //incTask.correlation_display = payload.correlation_display;
+                incTask.insert();
+                if (payload.attachment) {
+                    payload.attachment.map(function(varObj) {
+                        attachmentName = varObj.name;
+                        attachmentData = varObj.content;
+                        var attachment = new GlideSysAttachment();
+                        attachment.writeBase64(incTask, attachmentName, '', attachmentData);
+                    });
+                }
+            }
+            return incTask;
+        }
+    },
+
+    updateIncidentTask: function(payload) {
+        var correlation_id = payload.correlation_id;
+
+
+        if ((payload.state == "3") || (payload.state == "4") || (payload.state == "7")) {
+            return "Transaction Ignored ! Please use closeIncidentTask Method to close the incident";
+        } else {
+            var incTask = new GlideRecord('incident_task');
+            incTask.addQuery('correlation_id', correlation_id);
+            incTask.query();
+            if (incTask.next()) {
+                for (var key in payload) {
+                    if (global.JSUtil.notNil(payload[key])) {
+                        if (key == incTask[key].getName()) {
+                            incTask[key] = payload[key];
+                        }
+                    }
+                }
+                incTask.update();
+                return incTask;
+            } else {
+                return "Transaction Ignored ! Invalid Correlation ID, update cannot be processed";
+
+            }
+        }
+
+
+    },
+
+    closeIncidentTask: function(payload) {
+        var correlation_id = payload.correlation_id;
+        var correlation_display = payload.correlation_display;
+        var state = payload.state;
+        var close_notes = payload.close_notes;
+
+        if ((state == "1") || (state == "2")) {
+            return "Transaction ignored ! Invalid State Transition";
+        } else {
+
+            var incTask = new GlideRecord('incident_task');
+            incTask.addQuery('correlation_id', correlation_id);
+            incTask.addQuery('correlation_display', correlation_display);
+            incTask.query();
+            if (incTask.next()) {
+
+                if ((state == 3) && ((global.JSUtil.nil(close_notes)) || (!close_notes))) {
+                    return "Transaction Ignored ! close notes is mandatory when closing an incident task";
+                } else {
+                    incTask.state = payload.state;
+                    incTask.close_notes = payload.close_notes;
+                    incTask.update();
+                    return incTask;
+                }
+
+            } else {
+                return "Transaction Ignored ! Invalid Correlation ID/Correlation Display Value, update cannot be processed";
+
+            }
+        }
+
+    },
+
+    checkIncidentExist: function(inc) {
+        var incident = new GlideRecord('incident');
+        return (incident.get(inc));
+
+    },
+
+    getIncidentDetails: function(sysId) {
+        var respObj = {};
+        var incidentDetails = new GlideRecord('incident');
+        incidentDetails.get(sysId);
+        if (incidentDetails.getRowCount() == "1") {
+            respObj.number = incidentDetails.number;
+            respObj.impact = incidentDetails.impact;
+            respObj.urgency = incidentDetails.urgency;
+            respObj.category = incidentDetails.category;
+            respObj.subcategory = incidentDetails.subcategory;
+            respObj.business_service = incidentDetails.business_service.getDisplayValue();
+            respObj.state = incidentDetails.state;
+            respObj.assignment_group = incidentDetails.assignment_group.getDisplayValue();
+            respObj.priority = incidentDetails.priority;
+            respObj.affected_user = incidentDetails.caller_id.getDisplayValue();
+            respObj.record_id = incidentDetails.sys_id;
+            respObj.affected_ci = incidentDetails.cmdb_ci.getDisplayValue();
+            respObj.short_description = incidentDetails.short_description;
+            return respObj;
+        } else {
+            return "Transaction Ignored ! Invalid sys ID or Record does not exist in our system.";
+        }
+    },
+
+    getIncidentTaskDetails: function(sysId) {
+        var respObj = {};
+        var incidentTskDetails = new GlideRecord('incident_task');
+        incidentTskDetails.get(sysId);
+        if (incidentTskDetails.getRowCount() == "1") {
+            respObj.number = incidentTskDetails.number;
+            respObj.state = incidentTskDetails.state;
+            respObj.assignment_group = incidentTskDetails.assignment_group.getDisplayValue();
+            respObj.priority = incidentTskDetails.priority;
+            respObj.record_id = incidentTskDetails.sys_id;
+            respObj.affected_ci = incidentTskDetails.cmdb_ci.getDisplayValue();
+            respObj.short_description = incidentTskDetails.short_description;
+            return respObj;
+        } else {
+            return "Transaction Ignored ! Invalid sys ID or Record does not exist in our system.";
+        }
+    },
+
+    createIncidentForIncidentTask: function(payload) {
+        var incident = new GlideRecord('incident');
+        incident.initialize();
+        incident.short_description = payload.short_description;
+        incident.description = payload.description;
+        incident.assignment_group = payload.assignment_group;
+        incident.caller_id = gs.getUserID();
+        incident.state = '1';
+        incident.impact = this.getImpact(payload.priority);
+        incident.urgency = this.getUrgency(payload.priority);
+        incident.business_service = payload.business_service;
+        incident.service_offering = payload.service_offering;
+        incident.insert();
+        return incident.sys_id;
+
+    },
+
+    getImpact: function(priority) {
+        var impact = new GlideRecord('dl_u_priority');
+        impact.addQuery('priority', priority);
+        impact.query();
+        if (impact.next()) {
+            return impact.impact;
+        }
+
+    },
+
+    getUrgency: function(priority) {
+        var urgency = new GlideRecord('dl_u_priority');
+        urgency.addQuery('priority', priority);
+        urgency.query();
+        if (urgency.next()) {
+            return urgency.urgency;
+        }
+
+    },
+
+    createIncidentUsingIncidentTask: function(payload) {
+        gs.info("Assignment Group" + payload.assignment_group);
+        var c_id = payload.correlation_id;
+        var state = payload.state;
+        if ((state != "1") || (state != "2")) {
+            return "Transaction Ignored !Incident can only be created in new or inprogress state";
+
+        } else {
+            var incident = new GlideRecord('incident');
+            incident.addQuery('correlation_id', c_id);
+            incident.query();
+            if (incident.getRowCount() > 0) {
+                return "Transaction Ignored ! Correlation ID already exist, please try with a new correlation ID";
+            } else {
+                incident.initialize();
+                incident.short_description = payload.short_description;
+                incident.description = payload.description;
+                incident.assignment_group = payload.assignment_group;
+                incident.caller_id = gs.getUserID();
+                incident.correlation_id = payload.correlation_id;
+                incident.correlation_display = payload.correlation_display;
+                incident.impact = this.getImpact(payload.priority);
+                incident.urgency = this.getUrgency(payload.priority);
+                incident.state = payload.state;
+                incident.insert();
+                return incident;
+            }
+
+        }
+
+    },
+
+    incidentAssigned: function(payload) {
+        var incident = new GlideRecord('problem');
+        incident.addQuery('correlation_id', payload.correlation_id);
+        //incident.setLimit(1);
+        incident.query();
+        if (incident.getRowCount() > 0) {
+            return "Transaction Ignored ! Correlation ID already exist, please try with a new correlation ID";
+        } else {
+            incident.initialize();
+            incident.short_description = payload.short_description;
+            incident.description = payload.description;
+            incident.assignment_group = payload.assignment_group;
+            incident.caller_id = gs.getUserID();
+            incident.correlation_id = payload.correlation_id;
+            incident.correlation_display = payload.correlation_display;
+            incident.impact = this.getImpact(payload.priority);
+            incident.urgency = this.getUrgency(payload.priority);
+            incident.state = payload.state;
+            incident.cmdb_ci = payload.cmdb_ci;
+            incident.insert();
+            return incident;
+        }
+
+    },
+    updateIncidentUsingIncidentTask: function(payload) {
+        //gs.info("Assignment Group" + payload.assignment_group);
+        var c_id = payload.correlation_id;
+        var state = payload.state;
+        if ((state == "1") || (state == "2")) {
+            return "Transaction Ignored !Incident cannot be update in new or inprogress state";
+
+        } else {
+            var incident = new GlideRecord('incident');
+            //incident.addQuery('correlation_id', c_id);
+            incident.query();
+            incident.initialize();
+            incident.short_description = payload.short_description;
+            incident.description = payload.description;
+            incident.assignment_group = payload.assignment_group;
+            incident.caller_id = gs.getUserID();
+            incident.correlation_id = payload.correlation_id;
+            incident.correlation_display = payload.correlation_display;
+            incident.impact = this.getImpact(payload.priority);
+            incident.urgency = this.getUrgency(payload.priority);
+            incident.state = payload.state;
+            incident.update();
+            return incident;
+
+
+        }
+
+    },
+    createIncidentTaskDaimler: function(payload) {
+        var incTask1 = new GlideRecord('incident_task');
+        incTask1.addQuery('correlation_id', payload.correlation_id);
+        incTask1.query();
+        if (incTask1.getRowCount() > 0) {
+            return "Transaction Ignored !Correlation ID already exist, please try with a new correlation ID";
+        } else {
+            incTask1.initialize();
+            incTask1.incident = this.createIncidentForIncidentTask(payload);
+            incTask1.short_description = payload.short_description;
+            incTask1.description = payload.description;
+            incTask1.priority = payload.priority;
+            incTask1.state = "1";
+            incTask1.assignment_group = payload.assignment_group;
+            gs.info("payload assignment Group" + payload.assignment_group);
+            incTask1.correlation_id = payload.correlation_id;
+            incTask1.business_service = payload.business_service;
+            incTask1.service_offering = payload.service_offering;
+            incTask1.x_infte_everest_st_application_service = payload.application_service;
+            incTask1.insert();
+        }
+        return incTask1;
+
+    },
+
+    checkIncidentTaskExist: function(number) {
+        var incTaskExist = new GlideRecord('incident_task');
+        incTaskExist.addQuery('number', number);
+        incTaskExist.query();
+        return (incTaskExist.next());
+
+    },
+
+    updateIncidentTaskDaimler: function(payload, number) {
+        var resolution = payload.close_notes;
+        var comment = payload.work_notes;
+        var priority = payload.priority;
+        var service = payload.business_service;
+        var offering = payload.service_offering;
+        gs.info("priority" + priority);
+        var updateINCTask = new GlideRecord('incident_task');
+        updateINCTask.addQuery('number', number);
+        updateINCTask.query();
+        if (updateINCTask.next()) {
+
+            // Incident Resolved
+            if (resolution) {
+                updateINCTask.state = "3";
+                updateINCTask.close_notes = resolution;
+                updateINCTask.update();
+                return updateINCTask;
+            }
+            //Comment Added
+            if (comment && !priority) {
+                updateINCTask.work_notes = comment;
+                updateINCTask.update();
+                return updateINCTask;
+            }
+
+            // Priority Changed
+            if (priority && comment) {
+                updateINCTask.priority = priority;
+                updateINCTask.work_notes = comment;
+                updateINCTask.update();
+                return updateINCTask;
+            }
+            if ((service) || (offering)) {
+                updateINCTask.service_offering = offering;
+                updateINCTask.business_service = service;
+                updateINCTask.update();
+                return updateINCTask;
+            }
+
+        }
+
+    },
+
+    insertIncidentDaimler: function(payload) {
+        var inc = new GlideRecord('incident');
+        inc.addQuery('correlation_id', payload.correlation_id);
+        inc.query();
+        if (inc.getRowCount() > 0) {
+            return "Transaction Ignored !Correlation ID already exist, please try with a new correlation ID";
+        } else {
+            inc.initialize();
+            inc.short_description = payload.short_description;
+            inc.description = payload.description;
+            inc.state = global.IncidentState.NEW;
+            inc.assignment_group = payload.assignment_group;
+            inc.impact = this.getImpact(payload.priority);
+            inc.urgency = this.getUrgency(payload.priority);
+            inc.caller_id = gs.getUserID();
+            inc.business_service = payload.business_service;
+            inc.service_offering = payload.service_offering;
+            inc.x_infte_everest_st_application_service = payload.x_infte_everest_st_application_service;
+            inc.correlation_id = payload.correlation_id;
+            inc.category = 'inquiry';
+            inc.subcategory = 'email';
+            inc.contact_type = 'email';
+            inc.cmdb_ci = payload.cmdb_ci;
+            inc.insert();
+
+            return inc;
+
+        }
+    },
+
+    cancelIncidentDaimler: function(payload) {
+        var close_notes = payload.close_notes;
+
+        if (!close_notes) {
+            return "Transaction Ignored ! Reason is mandatory when cancelling an incident";
+        } else {
+            var incident = new GlideRecord('incident');
+            incident.addQuery('number', payload.number);
+            incident.addQuery('correlation_id', payload.correlation_id);
+            incident.setLimit(1);
+            incident.query();
+            if (incident.next()) {
+                incident.state = global.IncidentState.CANCELED;
+                incident.close_code = 'cancelled';
+                incident.close_notes = payload.close_notes;
+                incident.update();
+                return incident;
+
+            } else {
+                return "Transaction Ignored! Invalid Ticket Number";
+            }
+        }
+    },
+    resolveIncidentDaimler: function(payload) {
+        var close_notes = payload.close_notes;
+        if (!close_notes) {
+            return "Transaction Ignored ! Reason is mandatory when cancelling an incident";
+        } else {
+            var incident = new GlideRecord('incident');
+            incident.addQuery('number', payload.number);
+            incident.addQuery('correlation_id', payload.correlation_id);
+            incident.setLimit(1);
+            incident.query();
+            if (incident.next()) {
+                incident.state = global.IncidentState.RESOLVED;
+                incident.close_code = 'Solved (Permanently)';
+                incident.close_notes = payload.close_notes;
+                incident.update();
+                return incident;
+
+            } else {
+                return "Transaction Ignored! Invalid Ticket Number";
+            }
+        }
+
+    },
+    addCommentDaimler: function(payload) {
+        var incident = new GlideRecord('problem');
+        incident.addQuery('number', payload.number);
+        incident.addQuery('correlation_id', payload.correlation_id);
+        incident.setLimit(1);
+        incident.query();
+        if (incident.next()) {
+            incident.comments = payload.comment;
+            incident.update();
+            return incident;
+        } else {
+            return "Transaction Ignored ! Invalid Ticket Number";
+        }
+
+    },
+    priorityChangedDaimler: function(payload) {
+        var reason = payload.work_notes;
+        if (!reason) {
+            return "Transaction Ignored ! Reason is mandatory when changing priority";
+        } else {
+            var incident = new GlideRecord('incident');
+            incident.addQuery('number', payload.number);
+            incident.addQuery('correlation_id', payload.correlation_id);
+            incident.setLimit(1);
+            incident.query();
+            if (incident.next()) {
+                incident.impact = this.getImpact(payload.priority);
+                incident.urgency = this.getUrgency(payload.priority);
+                incident.work_notes = reason;
+                incident.update();
+                return incident;
+
+            } else {
+                return "Transaction Ignored! Invalid Ticket Number";
+            }
+        }
+    },
+    classifyIncidentDaimler: function(payload) {
+        var incident = new GlideRecord('incident');
+        incident.addQuery('number', payload.number);
+        incident.addQuery('correlation_id', payload.correlation_id);
+        incident.setLimit(1);
+        incident.query();
+        if (incident.next()) {
+            if (global.JSUtil.notNil(payload.business_service)) {
+                incident.business_service = payload.business_service;
+            }
+            if (global.JSUtil.notNil(payload.service_offering)) {
+                incident.service_offering = payload.service_offering;
+            }
+            if (global.JSUtil.notNil(payload.x_infte_everest_st_application_service)) {
+                incident.x_infte_everest_st_application_service = payload.x_infte_everest_st_application_service;
+            }
+            incident.update();
+            return incident;
+
+        } else {
+            return "Transaction Ignored! Invalid Ticket Number";
+        }
+    },
+
+    incidentGenericUpdate: function(payload, number) {
+        var state = payload.state;
+        var work_notes = payload.work_notes;
+        var impact = payload.impact;
+        var urgency = payload.urgency;
+        var cmdb_ci = payload.cmdb_ci;
+        var service = payload.business_service;
+        var service_offering = payload.service_offering;
+        var respObj = {};
+        var incGen = new GlideRecord('incident');
+        incGen.addQuery('number', number);
+        incGen.addQuery('correlation_id', payload.correlation_id);
+        incGen.query();
+        if (incGen.next()) {
+            if (global.JSUtil.notNil(state)) {
+
+                switch (state) {
+                    case "3":
+                        respObj = this.incidentOnHold(payload, incGen, respObj);
+                        break;
+                    case "6":
+                        respObj = this.incidentResolve(payload, incGen, respObj);
+                        break;
+                    case "8":
+                        respObj = this.incidentCancel(payload, incGen, respObj);
+                        break;
+                    case "2":
+                        respObj = this.incidentReOpen(payload, incGen, respObj);
+                        break;
+                }
+            } else if ((work_notes) && ((!impact) && (!urgency))) {
+                respObj = this.addWorkNotes(payload, incGen, respObj);
+
+
+            } else if (global.JSUtil.notNil(impact) || (global.JSUtil.notNil(urgency))) {
+                respObj = this.updatePriority(payload, incGen, respObj);
+
+
+            } else if ((global.JSUtil.notNil(cmdb_ci)) || (global.JSUtil.notNil(service)) || (global.JSUtil.notNil(service_offering))) {
+                respObj = this.classifyIncident(payload, incGen, respObj);
+
+            }
+			else{
+				respObj.status = "507";
+				respObj.message = "Transaction Ignored ! Invalid Payload";
+			}
+        } else {
+            respObj.status = "506";
+            respObj.message = "Transaction Ignored Invalid Ticket Number";
+        }
+        return respObj;
+    },
+    incidentOnHold: function(payload, incGen, respObj) {
+        gs.info("Inside Function");
+        var hold_reason = payload.hold_reason;
+        var comments = payload.comment;
+
+        if (global.JSUtil.notNil(hold_reason) && global.JSUtil.notNil(comments)) {
+            incGen.state = payload.state;
+            incGen.hold_reason = hold_reason;
+            incGen.comments = comments;
+            incGen.update();
+            respObj.status = "200";
+            respObj.message = "Record Successfully Placed on Hold" + incGen.number;
+        } else {
+            respObj.status = "108";
+            respObj.message = "Transaction Ignored ! On Hold Reason and Comments are mandatory for placing incident on-hold";
+
+        }
+        gs.info('respObj' + global.JSON.stringify(respObj));
+        return respObj;
+    },
+
+    incidentResolve: function(payload, incGen, respObj) {
+        var close_code = payload.close_code;
+        var close_notes = payload.close_notes;
+
+        if (global.JSUtil.notNil(close_code) && global.JSUtil.notNil(close_notes)) {
+            incGen.state = payload.state;
+            incGen.close_code = payload.close_code;
+            incGen.close_notes = payload.close_notes;
+            incGen.update();
+            respObj.status = "200";
+            respObj.message = "Record Successfully Resolved" + incGen.number;
+
+        } else {
+            respObj.status = "109";
+            respObj.message = "Transaction Ignored ! Close notes and Close Code is mandatory for resolving incident";
+        }
+        return respObj;
+    },
+
+    incidentCancel: function(payload, incGen, respObj) {
+        var close_code = payload.close_code;
+        var close_notes = payload.close_notes;
+
+        if (global.JSUtil.notNil(close_notes)) {
+            incGen.state = payload.state;
+            incGen.close_code = "cancelled";
+            incGen.close_notes = payload.close_notes;
+            incGen.update();
+            respObj.status = "200";
+            respObj.message = "Record Successfully Cancelled" + incGen.number;
+
+        } else {
+            respObj.status = "109";
+            respObj.message = "Transaction Ignored ! Reason is mandatory for cancelling incident";
+        }
+        return respObj;
+    },
+
+    incidentReOpen: function(payload, incGen, respObj) {
+        var comments = payload.comment;
+        var incState = incGen.state;
+
+        if ((incState == "3") || (incState == "6")) {
+            if (global.JSUtil.notNil(comments)) {
+                incGen.state = payload.state;
+                incGen.comments = payload.comments;
+                incGen.update();
+                respObj.status = "200";
+                respObj.message = "Record Successfully Moved to In Progress State" + incGen.number;
+
+            } else {
+                respObj.status = "109";
+                respObj.message = "Transaction Ignored ! Comments is mandatory for changing incident state to in progress";
+            }
+        } else {
+            respObj.status = "110";
+            respObj.message = "Transaction Ignored ! Invalid State Transition, Only onhold and resolved incidents can be moved to in progress";
+        }
+        return respObj;
+    },
+
+    addWorkNotes: function(payload, incGen, respObj) {
+        incGen.work_notes = payload.work_notes;
+        incGen.update();
+        respObj.status = "200";
+        respObj.message = "Work Notes Successfully added for Incident " + incGen.number;
+        return respObj;
+    },
+
+    updatePriority: function(payload, incGen, respObj) {
+        if (global.JSUtil.notNil(payload.work_notes)) {
+            incGen.impact = payload.impact;
+            incGen.urgency = payload.urgency;
+			incGen.work_notes = payload.work_notes;
+            incGen.update();
+            respObj.status = "200";
+            respObj.message = "Priority has been updated for Incident " + incGen.number;
+        } else {
+            respObj.status = "111";
+            respObj.message = "Transaction Ignored ! Work Notes is mandatory when updating priority";
+        }
+        return respObj;
+
+    },
+
+    classifyIncident: function(payload, incGen, respObj) {
+
+        if (global.JSUtil.notNil(payload.business_service)) {
+            incGen.business_service = payload.business_service;
+        }
+        if (global.JSUtil.notNil(payload.service_offering)) {
+            incGen.service_offering = payload.service_offering;
+        }
+        if (global.JSUtil.notNil(payload.cmdb_ci)) {
+            incGen.cmdb_ci = payload.cmdb_ci;
+        }
+		incGen.update();
+		respObj.status = "200";
+		respObj.message = "Record Successfully updated "+ incGen.number;
+        return respObj;
+    },
+
+	getListOfIncidents: function (incidentRecord) {
+        try {
+			gs.info('query in pt include'+incidentRecord);
+            var incident_array = [];
+            var inc = new GlideRecord('incident');
+            inc.addEncodedQuery(incidentRecord);
+            inc.query();
+            while (inc.next()) {
+                incident_array.push({
+                    'number': inc.number + '',
+                    'short_description': inc.short_description + '',
+                    'priority': inc.priority
+					});
+                return incident_array;
+            }
+        }
+        catch (e) {
+            gs.error('error=', e);
+        }
+  },
+    type: 'Incident_APIUtils'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-15 09:37:44</sys_created_on>
+        <sys_id>620106552f232010b399857cf699b61c</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>Incident_APIUtils</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_update_name>sys_script_include_620106552f232010b399857cf699b61c</sys_update_name>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-15 09:56:24</sys_updated_on>
+    </sys_script_include>
+</record_update>

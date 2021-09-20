@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="Integration Value Mapping" max_length="40" name="x_454651_pbmdaimle_integration_value_mapping" sizeclass="0" type="collection">
+        <element label="Application" max_length="32" name="application" reference="x_454651_pbmdaimle_integration_configuration" type="reference"/>
+        <element label="Application Value" max_length="60" name="application_value" type="string"/>
+        <element label="Internal Value" max_length="60" name="internal_value" type="string"/>
+        <element label="Module" max_length="60" name="module" type="string"/>
+        <element label="Parent Field" max_length="60" name="parent_field" type="string"/>
+        <element default="answer = (function(appValue,obj) {&#13;&#10;    var pr1 = new GlideRecord(obj.reference_table);&#13;&#10;    pr1.addQuery('name', appValue);&#13;&#10;    pr1.query();&#13;&#10;    if (pr1.next()) {&#13;&#10;        return pr1.getUniqueValue();&#13;&#10;&#13;&#10;    } else {&#13;&#10;        return &quot;&quot;;&#13;&#10;    }&#13;&#10;&#13;&#10;})(appValue,obj);" label="Process Script" max_length="8000" name="process_script" type="script"/>
+        <element choice="1" label="Validation Type" max_length="40" name="validation_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Choice" sequence="0" value="Choice"/>
+                <element inactive_on_update="false" label="Reference" sequence="1" value="Reference"/>
+                <element inactive_on_update="false" label="Direct" sequence="2" value="Direct"/>
+            </choice>
+        </element>
+        <index name="index">
+            <element name="application"/>
+        </index>
+    </element>
+</database>

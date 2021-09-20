@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_choice action="INSERT_OR_UPDATE" field="validation_type" table="x_454651_pbmdaimle_integration_value_mapping" version="3">
+        <sys_choice_set action="INSERT_OR_UPDATE">
+            <element>validation_type</element>
+            <name>x_454651_pbmdaimle_integration_value_mapping</name>
+            <sys_class_name>sys_choice_set</sys_class_name>
+            <sys_created_by>katchis</sys_created_by>
+            <sys_created_on>2021-04-14 16:57:18</sys_created_on>
+            <sys_id>fa4cd2812f632010b399857cf699b62c</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>validation_type</sys_name>
+            <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+            <sys_update_name>sys_choice_x_454651_pbmdaimle_integration_value_mapping_validation_type</sys_update_name>
+            <sys_updated_by>katchis</sys_updated_by>
+            <sys_updated_on>2021-04-14 16:57:18</sys_updated_on>
+        </sys_choice_set>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>validation_type</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>Choice</label>
+            <language>en</language>
+            <name>x_454651_pbmdaimle_integration_value_mapping</name>
+            <sequence>0</sequence>
+            <synonyms/>
+            <sys_created_by>katchis</sys_created_by>
+            <sys_created_on>2021-04-14 16:57:18</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>cb3c5a412f632010b399857cf699b6c3</sys_id>
+            <sys_mod_count>2</sys_mod_count>
+            <sys_updated_by>katchis</sys_updated_by>
+            <sys_updated_on>2021-04-14 16:57:28</sys_updated_on>
+            <value>Choice</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>validation_type</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>Reference</label>
+            <language>en</language>
+            <name>x_454651_pbmdaimle_integration_value_mapping</name>
+            <sequence>1</sequence>
+            <synonyms/>
+            <sys_created_by>katchis</sys_created_by>
+            <sys_created_on>2021-04-14 16:57:39</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>034cde012f632010b399857cf699b616</sys_id>
+            <sys_mod_count>2</sys_mod_count>
+            <sys_updated_by>katchis</sys_updated_by>
+            <sys_updated_on>2021-04-14 16:57:52</sys_updated_on>
+            <value>Reference</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>validation_type</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>Direct</label>
+            <language>en</language>
+            <name>x_454651_pbmdaimle_integration_value_mapping</name>
+            <sequence>2</sequence>
+            <synonyms/>
+            <sys_created_by>katchis</sys_created_by>
+            <sys_created_on>2021-04-14 16:58:06</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>006c56812f632010b399857cf699b6b1</sys_id>
+            <sys_mod_count>2</sys_mod_count>
+            <sys_updated_by>katchis</sys_updated_by>
+            <sys_updated_on>2021-04-14 16:58:18</sys_updated_on>
+            <value>Direct</value>
+        </sys_choice>
+    </sys_choice>
+</record_update>

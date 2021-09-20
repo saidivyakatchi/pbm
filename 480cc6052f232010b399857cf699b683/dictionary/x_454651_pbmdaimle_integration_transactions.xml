@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="Integration Transactions" max_length="40" name="x_454651_pbmdaimle_integration_transactions" sizeclass="30" type="collection">
+        <element label="Application" max_length="60" name="application" type="string"/>
+        <element label="Comments" max_length="60" name="comments" type="string"/>
+        <element label="Correlation ID" max_length="600" name="correlation_id" type="string"/>
+        <element label="Module" max_length="600" name="module" type="string"/>
+        <element label="Number" max_length="60" name="number" type="string"/>
+        <element label="Payload" max_length="1000000" name="payload" type="string"/>
+        <element label="Status" max_length="600" name="status" type="string"/>
+        <element label="Transaction ID" max_length="600" name="transaction_id" type="string"/>
+    </element>
+</database>

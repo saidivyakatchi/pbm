@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>POST</http_method>
+        <name>attachmentRemoved</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    // implement resource here
+
+    var respObj = {};
+    var action = "attach_remove";
+    var module = "problem";
+    var interfaceUtils = new Incident_APIUtils();
+    var GenericUtils = new Generic_Utils();
+    var payload = request.body.data;
+	gs.info("Attachment Removed payload"+global.JSON.stringify(payload));
+    var company = gs.getUser().getCompanyID();
+	//var company ='b053d2912f632010b399857cf699b6be';
+	gs.info("Attachment Removed company"+company);
+    var application = GenericUtils.checkInterfaceConfiguration(company);
+//var application 	='a8ecda812f632010b399857cf699b6b1';
+	gs.info("Attachment Removed application"+application);
+    var validpayload = GenericUtils.checkPayloadMand(payload, application, module, action);
+
+    // insert record in logs table
+    var log_sysID = GenericUtils.insertInterfaceRecord(payload, action, module, company);
+
+    if (validpayload) {
+        respObj.status = "106";
+        respObj.message = "Transaction Ignored ! Mandatory field " + validpayload + " is not present in the payload";
+    } else {
+
+        //var output = GenericUtils.getCustObj(payload, application, module, action);
+		var output = GenericUtils.getCustObj(payload, application, module, action);
+		
+		gs.info("Attachment Removed output"+global.JSON.stringify(output));
+		if (typeof output == 'object') {
+
+            var number = GenericUtils.deleteAttachment(output, module);
+            if (typeof number == "object") {
+                respObj.status = "200";
+                respObj.message = "Attachment Record Successfully deleted for  " + number.number;
+            } else {
+                respObj.status = "505";
+                respObj.message = number;
+            }
+        } else {
+            respObj.status = "506";
+            respObj.message = output;
+        }
+    }
+		response.setBody(respObj);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_454651_pbmdaimle/problem_management/attachmentRemoved</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/attachmentRemoved</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-15 09:33:46</sys_created_on>
+        <sys_id>2b5002552f232010b399857cf699b632</sys_id>
+        <sys_mod_count>15</sys_mod_count>
+        <sys_name>attachmentRemoved</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_update_name>sys_ws_operation_2b5002552f232010b399857cf699b632</sys_update_name>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-15 11:33:41</sys_updated_on>
+        <web_service_definition display_value="problem management">efff31552f232010b399857cf699b62b</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

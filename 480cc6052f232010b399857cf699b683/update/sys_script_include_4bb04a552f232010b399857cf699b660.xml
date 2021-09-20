@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_454651_pbmdaimle.Generic_Utils</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>Generic_Utils</name>
+        <script><![CDATA[var Generic_Utils = Class.create();
+Generic_Utils.prototype = {
+    initialize: function() {},
+
+    checkHeader: function(module, mod) {
+        return ((global.JSUtil.notNil(module)) && (module == mod));
+    },
+
+    checkValidSender: function(company) {
+        var intConfig = new GlideRecord('x_454651_pbmdaimle_integration_configuration');
+        intConfig.get('application.name', company);
+        return intConfig.sys_id;
+    },
+    checkInterfaceConfiguration: function(companyID) {
+        var intConfig = new GlideRecord('x_454651_pbmdaimle_integration_configuration');
+        intConfig.get('application.sys_id', companyID);
+        return intConfig.sys_id;
+    },
+    // needs to be completed
+    insertInterfaceRecord: function(payload, id, action, module, company) {
+        var parser = new global.JSON();
+
+        var stagingTable = new GlideRecord('x_454651_pbmdaimle_integration_transactions');
+        stagingTable.initialize();
+        stagingTable.module = module;
+        stagingTable.application = company;
+        stagingTable.payload = parser.encode(payload);
+        stagingTable.transaction_type = action;
+        //stagingTable.correlation_id = payload.correlation_id;
+		stagingTable.correlation_id = payload.number;
+        stagingTable.insert();
+        return stagingTable.sys_id;
+    },
+
+    updateInterfaceRecord: function(sys_id, response) {
+        var intRecord = new GlideRecord('x_454651_pbmdaimle_integration_transactions');
+        if (intRecord.get(sys_id)) {
+            intRecord.comments = response.message;
+            intRecord.status = response.status;
+            intRecord.update();
+        }
+        return;
+    },
+
+
+    getCustObj: function(payload, application, Module, action) {
+
+        var fieldLength;
+        var skip;
+        var integrationError;
+        var message;
+        var trueArr = [];
+        var falseArr = [];
+        var custObjArr = [];
+        var custObj = {};
+        var newValue;
+
+        for (var key in payload) {
+            checkKeyValue(key, payload[key], application, Module);
+
+            if (skip) {
+                continue;
+            } else if (trueArr.length != 0) {
+                integrationError = true;
+                message = "Transaction Ignored !Mandatory values missing for fields " + trueArr;
+                break;
+            } else if (!newValue) {
+                message = "Transaction Ignored !Missing value for mandatory field " + key;
+                break;
+            } else {
+                continue;
+            }
+        }
+
+
+
+
+        function checkKeyValue(column, value, app, module) {
+            try {
+                var fieldMap = new GlideRecord('x_454651_pbmdaimle_integration_field_mapping');
+                fieldMap.addEncodedQuery('application=' + app + '^module=' + module + '^application_field=' + column);
+                fieldMap.query();
+                if (fieldMap.next()) {
+                    skip = false;
+                    (findMandFieldsMissied(column, fieldMap.action, value));
+                    if (!(fieldMap.validation_type)) {
+                        newValue = value;
+                        custObj[fieldMap.internal_field] = newValue;
+                    } else {
+
+                        newValue = findValueMapping(fieldMap.internal_field, fieldMap.validation_type, value, module, app);
+
+                        if (newValue) {
+                            custObj[fieldMap.internal_field] = newValue;
+                        } else {
+                            integrationError = true;
+                            message = "There is no correct value for " + column;
+                        }
+                    }
+                    return;
+                } else {
+                    skip = true;
+                    return;
+                }
+            } catch (e) {
+                integrationError = true;
+                gs.error("checkKeyValue function catch error" + e);
+            }
+
+        }
+
+        function findMandFieldsMissied(col, ismand, value) {
+            try {
+                if (ismand) {
+                    if (ismand.indexOf(action) > -1) {
+                        if (global.JSUtil.nil(value)) {
+                            trueArr.push(col);
+                        }
+                    }
+                }
+            } catch (e) {
+                integrationError = true;
+                gs.error("findMandFieldsMissied function catch error" + e);
+            }
+
+        }
+
+        function findValueMapping(col, type, oldvalue, module, app) {
+            try {
+                var value;
+                if (type == 'Choice') {
+                    value = mappingValue('x_454651_pbmdaimle_integration_value_mapping', col, module, oldvalue, type, app);
+                    if (value) {
+                        return value;
+                    } else {
+                        return "";
+                    }
+
+                } else if (type == "Reference") {
+					gs.info("Test123456"+payload.cmdb_ci.items[0]['values']['sys_id']);
+
+                    value = getReferenceMapping('x_454651_pbmdaimle_integration_value_mapping', col, module, oldvalue, type, app);
+                    if (value) {
+                        return value;
+                    } else {
+                        return "";
+                    }
+
+                }
+				else if (type == "Direct") {
+					gs.info("Test123456"+payload.cmdb_ci.items[0]['values']['sys_id']);
+
+                    value = getReferenceMapping('x_infte_everest_st_value_mapping', col, module, payload.cmdb_ci.items[0]['values']['name'], type, app);
+                    if (value) {
+                        return value;
+                    } else {
+                        return "";
+                    }
+
+                }
+            } catch (e) {
+                integrationError = true;
+                gs.error("findValueMapping function catch error" + e);
+            }
+        }
+
+        function mappingValue(table, col, module, oldvalue, type, app) {
+            try {
+                var vars;
+                var sys_id;
+                var evaluator;
+                var vm = new GlideRecord(table);
+                vm.addEncodedQuery('application=' + app + '^parent_field=' + col + '^module=' + module + '^application_value=' + oldvalue);
+                vm.query();
+                if (vm.next()) {
+                    if (type == 'Choice') {
+                        return vm.internal_value.toString();
+                    }
+                }
+            } catch (e) {
+                integrationError = true;
+                gs.error("mappingValue function catch error" + e);
+            }
+        }
+
+        function getReferenceMapping(table, col, module, oldvalue, type, app) {
+            var vars1;
+            var refMap = new GlideRecord(table);
+            refMap.addEncodedQuery('application=' + app + '^parent_field=' + col + '^module=' + module);
+            refMap.query();
+            gs.info("valuemapcount" + refMap.getRowCount());
+            if (refMap.next()) {
+                vars1 = {
+                    'appValue': oldvalue,
+                    'obj': refMap
+                };
+                var evaluator = new GlideScopedEvaluator();
+                var uniqueValue = (evaluator.evaluateScript(refMap, 'process_script', vars1));
+            }
+            if (uniqueValue) {
+                return uniqueValue;
+            } else {
+                return "";
+            }
+
+        }
+        gs.info("custObj" + global.JSON.stringify(custObj));
+        if (integrationError) {
+            return message;
+        } else {
+            return custObj;
+        }
+    },
+
+    checkPayloadMand: function(payload, application, Module, action) {
+        try {
+            var Field;
+            var gr = new GlideRecord('x_454651_pbmdaimle_integration_field_mapping');
+            gr.addEncodedQuery('application=' + application + '^module=' + Module);
+            gr.orderBy('internal_field');
+            gr.addQuery("action", "CONTAINS", action);
+            gr.query();
+            while (gr.next()) {
+                var fieldOutput = checkPayload(gr, payload);
+                if (!fieldOutput) {
+                    Field = gr.application_field;
+                    break;
+                } else {
+                    continue;
+                }
+
+            }
+            return Field;
+        } catch (e) {
+            gs.debug("Payload error" + e);
+        }
+
+
+        function checkPayload(gr, payload) {
+            var payloadField;
+            for (var key in payload) {
+                if (gr.internal_field == key) {
+                    payloadField = true;
+                    break;
+                } else if (gr.application_field == key) {
+                    payloadField = true;
+                    break;
+                } else {
+                    payloadField = false;
+                    continue;
+                }
+            }
+            return payloadField;
+        }
+    },
+
+    checkExistingTaskUpdate: function(obj, app, module) {
+        var taskPresent = this.getRecordSysId("correlation_id", "correlation_display", obj.correlation_id, obj.correlation_display, module);
+
+        if (taskPresent != '') {
+            return true;
+        } else {
+            return false;
+        }
+
+    },
+
+    getRecordSysId: function(correlation_id, correlation_display, correlation_id_value, correlation_display_value, table) {
+        var grRec = new GlideRecord(table);
+        grRec.addQuery(correlation_id, correlation_id_value);
+        grRec.addQuery(correlation_display, correlation_display_value);
+        grRec.query();
+        if (grRec.next()) {
+            return grRec.sys_id;
+        } else {
+            return '';
+        }
+
+    },
+
+    updateAttachment: function(obj, module) {
+        var task = new GlideRecord(module);
+        task.addQuery('correlation_id', obj.correlation_id);
+        task.addQuery('number', obj.number);
+        task.query();
+        if (task.next()) {
+            this._addAttachments(obj.attachment_name, obj.attachment_data, task, module);
+            return task;
+        } else {
+            return "Transaction Ignored! Task does not exist to add attachment";
+        }
+
+    },
+
+    deleteAttachment: function(obj, module) {
+        var attachmentDelete = this._deleteAttachments(obj.attachment_name, obj.correlation_id, obj.number);
+        if (attachmentDelete) {
+            return obj.number;
+        } else {
+            return "Transaction Ignored! Task does not exist to delete attachment";
+        }
+    },
+    _addAttachments: function(attachmentName, attachmentData, taskId, module) {
+
+        var attachment = new GlideSysAttachment();
+        var att = new GlideRecord('sys_attachment');
+        att.addQuery('table_sys_id', taskId.sys_id);
+        att.addQuery('file_name', attachmentName);
+        att.query();
+        if (att.getRowCount() >= 1) {
+            gs.info("Attchemnt after task creation");
+        } else {
+            attachment.writeBase64(taskId, attachmentName, '', attachmentData);
+        }
+        return;
+    },
+    _deleteAttachments: function(attachmentName, correlation_id, number) {
+        var taskSysID;
+        var task = new GlideRecord('problem');
+        task.addQuery('correlation_id', correlation_id);
+        task.addQuery('number', number);
+        task.query();
+        if (task.next()) {
+            var attachment = new GlideRecord("sys_attachment");
+            attachment.addEncodedQuery('table_sys_id=' + task.sys_id.toString() + '^file_name=' + attachmentName);
+            attachment.query();
+            if (attachment.next()) {
+                var att1 = new GlideSysAttachment();
+                att1.deleteAttachment(attachment.sys_id);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    },
+	
+	
+	
+
+    type: 'Generic_Utils'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>katchis</sys_created_by>
+        <sys_created_on>2021-04-15 09:36:24</sys_created_on>
+        <sys_id>4bb04a552f232010b399857cf699b660</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>Generic_Utils</sys_name>
+        <sys_package display_value="PBMdaimler" source="x_454651_pbmdaimle">480cc6052f232010b399857cf699b683</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="PBMdaimler">480cc6052f232010b399857cf699b683</sys_scope>
+        <sys_update_name>sys_script_include_4bb04a552f232010b399857cf699b660</sys_update_name>
+        <sys_updated_by>katchis</sys_updated_by>
+        <sys_updated_on>2021-04-15 10:48:54</sys_updated_on>
+    </sys_script_include>
+</record_update>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="Integration Configuration" max_length="40" name="x_454651_pbmdaimle_integration_configuration" sizeclass="2" type="collection">
+        <element display="true" label="Application" max_length="32" name="application" reference="core_company" type="reference"/>
+        <index name="index">
+            <element name="application"/>
+        </index>
+    </element>
+</database>
